@@ -1,66 +1,55 @@
-## Foundry
+# Transient Store Foundry Template
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A foundry template with custom `solc` binaries (from [transient-storage](https://github.com/ethereum/solidity/tree/transient-store)) that supports transient storage opcodes in huff language using `__VERBATIM(0x5c)` and `__VERBATIM(0x5d)` for tload and tstore respectively.
 
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+```bash
+forge build --use bin/solc
+forge test  --use bin/solc
 ```
 
-### Test
+## Example contract
 
-```shell
-$ forge test
-```
+```solidity
+/// @dev INTERFACE
+#define function tstore(uint256 slot, uint256 value) payable returns()
+#define function tload(uint256 slot) payable returns(uint256)
 
-### Format
 
-```shell
-$ forge fmt
-```
+/// @dev ENTRY POINT
+#define macro MAIN() = {
+    0x00 calldataload 0xe0 shr                              // [functionSig]
 
-### Gas Snapshots
+    dup1 __FUNC_SIG(tstore) eq tstore_impl jumpi            // [functionSig]
+    __FUNC_SIG(tload) eq tload_impl jumpi                   // []
+    0x00 0x00 revert
 
-```shell
-$ forge snapshot
-```
+    tstore_impl:
+        TSTORE_IMPL()
 
-### Anvil
+    tload_impl:
+        TLOAD_IMPL()
+}
 
-```shell
-$ anvil
-```
 
-### Deploy
+#define macro TSTORE_IMPL() = {
+    0x24                                                    // [0x24]
+    calldataload                                            // [value]
+    0x04                                                    // [0x04, value]
+    calldataload                                            // [slot, value]
+    __VERBATIM(0x5d) // tstore                              // []
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
+    stop
+}
 
-### Cast
+#define macro TLOAD_IMPL() = {
+    0x04                                                    // [0x04]
+    calldataload                                            // [slot]
+    __VERBATIM(0x5c) // tload                               // [value]
+    0x00                                                    // [0x00, value]
+    mstore                                                  // []
 
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+    0x20                                                    // [0x20]
+    0x00                                                    // [0x00, 0x20]
+    return                                                  // []
+}
 ```
