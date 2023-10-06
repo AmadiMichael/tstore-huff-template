@@ -1,11 +1,6 @@
 # Transient Store Foundry Template
 
-A foundry template with custom `solc` binaries (from [transient-storage](https://github.com/ethereum/solidity/tree/transient-store)) that supports transient storage opcodes in huff language using `__VERBATIM(0x5c)` and `__VERBATIM(0x5d)` for tload and tstore respectively.
-
-```bash
-forge build --use bin/solc
-forge test  --use bin/solc
-```
+A foundry template that supports transient storage opcodes in huff language using `__VERBATIM(0x5c)` and `__VERBATIM(0x5d)` for tload and tstore respectively.
 
 ## Example contract
 
